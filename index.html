@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kilometervergoeding – Filou Oostende</title>
+  <style>
+    :root { --bg:#f6f7fb; --fg:#111; --muted:#666; --card:#fff; --line:#e5e7eb; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--fg); margin:0; }
+    .wrap { max-width: 760px; margin: 40px auto; padding: 0 20px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow: 0 4px 14px rgba(0,0,0,.04); }
+    h1 { font-size: 22px; margin: 0 0 16px; }
+    label { display:block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, button { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:16px; }
+    select { background:#fff; }
+    button { cursor:pointer; font-weight:700; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .muted { color:var(--muted); font-size: 14px; }
+    .actions { display:flex; gap:12px; margin-top: 16px; }
+    .btn { background:#111; color:#fff; border:none; }
+    .btn-outline { background:#fff; border:1px solid var(--line); }
+    .archief { margin-top: 24px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:10px; border-top:1px solid var(--line); text-align:left; }
+    th { background:#fafafa; }
+    .ok { padding:12px; border-radius:10px; background:#eaf8ed; border:1px solid #bfe7c5; margin:16px 0; display:none; }
+    .err{ padding:12px; border-radius:10px; background:#fde8e8; border:1px solid #f5b5b5; margin:16px 0; display:none; }
+    @media (max-width:640px){ .row{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Kilometervergoeding – Filou Oostende</h1>
+      <p class="muted">Vul onderstaande velden in. De aanvraag gaat naar de secretaris voor validatie.</p>
+
+      <div id="ok" class="ok">✅ Aanvraag verstuurd. Je kan het centrale archief openen of hieronder je lokale archief bekijken.</div>
+      <div id="err" class="err">⚠️ Verzenden mislukt. Probeer opnieuw of gebruik de knop “Open formulier in nieuw tabblad”.</div>
+
+      <!-- Formulier -->
+      <form id="ritForm" target="_blank" method="post" action="https://script.google.com/macros/s/AKfycbxYBryZ2_ydKhTZB2Xrz4QrHuEGSpEgqDGIxAAhOMdn/exec">
+        <label for="afstand">Afstand (km)</label>
+        <input id="afstand" name="afstand_km" type="number" step="0.1" min="0" required />
+
+        <label for="bestemming">Bestemming</label>
+        <input id="bestemming" name="bestemming" type="text" placeholder="bv. Oostkamp Sporthal" required />
+
+        <div class="row">
+          <div>
+            <label for="reden">Reden</label>
+            <select id="reden" name="reden" required>
+              <option>Training Oostkamp</option>
+              <option>Wedstrijd verplaatsing</option>
+            </select>
+          </div>
+          <div>
+            <label for="coach">Naam coach</label>
+            <input id="coach" name="coach_naam" type="text" placeholder="bv. Coach Maarten" required />
+          </div>
+        </div>
+
+        <!-- VASTE ONTVANGER -->
+        <input type="hidden" name="valideerder_email" value="secretaris@filou-oostende.be" />
+
+        <div class="actions">
+          <button id="sendBtn" class="btn" type="submit">Verstuur</button>
+          <a id="openNew" class="btn btn-outline" href="https://script.google.com/macros/s/AKfycbxYBryZ2_ydKhTZB2Xrz4QrHuEGSpEgqDGIxAAhOMdn/exec?action=new" target="_blank" rel="noopener">Open formulier in nieuw tabblad</a>
+          <a id="openDash" class="btn btn-outline" href="https://script.google.com/macros/s/AKfycbxYBryZ2_ydKhTZB2Xrz4QrHuEGSpEgqDGIxAAhOMdn/exec?action=dashboard" target="_blank" rel="noopener">Open centraal archief (dashboard)</a>
+        </div>
+      </form>
+
+      <!-- Lokaal archief (op dit toestel) -->
+      <div class="archief">
+        <h2>Archief (lokaal op dit toestel)</h2>
+        <p class="muted">Hier zie je je eigen laatste aanvragen die vanaf dit toestel verstuurd zijn.</p>
+        <table>
+          <thead>
+            <tr><th>Datum</th><th>Bestemming</th><th>Reden</th><th>Coach</th><th>Afstand</th></tr>
+          </thead>
+          <tbody id="archiefBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 👉 Je Apps Script /exec URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYBryZ2_ydKhTZB2Xrz4QrHuEGSpEgqDGIxAAhOMdn/exec";
+
+    const form   = document.getElementById('ritForm');
+    const okBox  = document.getElementById('ok');
+    const errBox = document.getElementById('err');
+    const archTbody = document.getElementById('archiefBody');
+
+    // Lokaal archief helpers
+    const KEY = "filou_archief";
+    function loadArchief(){
+      const rows = JSON.parse(localStorage.getItem(KEY) || "[]");
+      archTbody.innerHTML = rows.map(r => \`
+        <tr>
+          <td>\${new Date(r.ts).toLocaleString()}</td>
+          <td>\${r.bestemming}</td>
+          <td>\${r.reden}</td>
+          <td>\${r.coach_naam}</td>
+          <td>\${Number(r.afstand_km).toFixed(1)} km</td>
+        </tr>
+      \`).join("");
+    }
+    function saveArchief(row){
+      const rows = JSON.parse(localStorage.getItem(KEY) || "[]");
+      rows.unshift(row);
+      localStorage.setItem(KEY, JSON.stringify(rows.slice(0, 50)));
+      loadArchief();
+    }
+    loadArchief();
+
+    // Versturen via fetch (blijft op de pagina). Valt terug op native submit bij error.
+    form.addEventListener('submit', async (e) => {
+      const payload = {
+        afstand_km: form.afstand_km.value,
+        bestemming: form.bestemming.value,
+        reden: form.reden.value,
+        coach_naam: form.coach_naam.value,
+        valideerder_email: "secretaris@filou-oostende.be",
+        ts: Date.now()
+      };
+      saveArchief(payload);
+
+      try {
+        e.preventDefault();
+        errBox.style.display = 'none';
+        okBox.style.display  = 'none';
+
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams(payload).toString(),
+          mode: 'no-cors'
+        });
+
+        okBox.style.display = 'block';
+      } catch(err) {
+        okBox.style.display = 'none';
+        errBox.style.display = 'block';
+        setTimeout(() => form.submit(), 50);
+      }
+    });
+  </script>
+</body>
+</html>
