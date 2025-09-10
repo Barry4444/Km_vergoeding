@@ -48,7 +48,8 @@
 
       <div class="info" style="margin:8px 0 14px">
         📦 <b>Bundelmodus:</b> je formulier wordt <u>ingediend</u> in de centrale lijst. De valideerder krijgt nog <b>geen</b> mail<br>
-        tot iemand op STAFF <a href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=senddigest" target="_blank">de bundel verstuurt</a>.
+        tot iemand op STAFF <a href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=senddigest" target="_blank">de bundel verstuurt</a>.<br>
+        ✉️ De aanvrager krijgt <b>onmiddellijk een ontvangstbevestiging</b> (e-mailadres is verplicht).
       </div>
 
       <div class="road" aria-hidden="true"><div class="car">🚗💨</div></div>
@@ -88,8 +89,8 @@
           </div>
         </div>
 
-        <label for="email">E-mail aanvrager (voor bevestiging bij goedkeuring/betaling)</label>
-        <input id="email" name="gebruiker_email" type="email" placeholder="naam@club.be" />
+        <label for="email">E-mail aanvrager <span class="muted">(verplicht voor ontvangstbevestiging)</span></label>
+        <input id="email" name="gebruiker_email" type="email" placeholder="naam@club.be" required />
 
         <div class="row">
           <div>
@@ -155,31 +156,37 @@
     const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
     const readLS=k=>{ try{ return JSON.parse(localStorage.getItem(k)||"[]"); }catch(e){ return []; } };
     const writeLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
+
     function payloadFromForm(){
       const f=$('#ritForm');
       const km=(f.afstand_km.value||'').replace(',', '.');
       const extra=(f.diverse_bedrag.value||'').replace(',', '.');
-      return {
-        rit_datum:f.rit_datum.value, afstand_km:km, bestemming:f.bestemming.value, ploeg:f.ploeg.value, reden:f.reden.value,
+      return { rit_datum:f.rit_datum.value, afstand_km:km, bestemming:f.bestemming.value, ploeg:f.ploeg.value, reden:f.reden.value,
         coach_naam:f.coach_naam.value, gebruiker_email:f.gebruiker_email.value, diverse_omschrijving:f.diverse_omschrijving.value,
-        diverse_bedrag:extra, valideerder_email:f.valideerder_email.value, ts:Date.now()
-      };
+        diverse_bedrag:extra, valideerder_email:f.valideerder_email.value, ts:Date.now() };
     }
+
     function fmtMoney(n){ return "€ " + (Number(n)||0).toFixed(2); }
-    function renderPending(){ const rows=readLS(K_PENDING); $('#pendingBody').innerHTML=rows.map((r,i)=>`
+    function renderPending(){
+      const rows=readLS(K_PENDING);
+      $('#pendingBody').innerHTML=rows.map((r,i)=>`
       <tr>
         <td><input type="checkbox" class="rowchk" data-i="${i}"></td>
         <td>${r.rit_datum||'-'}</td><td>${r.bestemming||'-'}</td><td>${r.ploeg||'-'}</td><td>${r.reden||'-'}</td><td>${r.coach_naam||'-'}</td>
         <td style="text-align:right">${Number(r.afstand_km||0).toFixed(2)} km</td>
         <td style="text-align:right">${fmtMoney(r.diverse_bedrag)}</td>
         <td>${(r.diverse_omschrijving||'').replace(/</g,'&lt;')}</td>
-      </tr>`).join(''); }
-    function renderSent(){ const rows=readLS(K_SENT); $('#sentBody').innerHTML=rows.map(r=>`
+      </tr>`).join('');
+    }
+    function renderSent(){
+      const rows=readLS(K_SENT);
+      $('#sentBody').innerHTML=rows.map(r=>`
       <tr>
         <td>${new Date(r.sentAt||Date.now()).toLocaleString()}</td>
         <td>${r.rit_datum||'-'}</td><td>${r.bestemming||'-'}</td><td>${r.ploeg||'-'}</td><td>${r.reden||'-'}</td><td>${r.coach_naam||'-'}</td>
         <td style="text-align:right">${Number(r.afstand_km||0).toFixed(2)} km</td><td style="text-align:right">${fmtMoney(r.diverse_bedrag)}</td>
-      </tr>`).join(''); }
+      </tr>`).join('');
+    }
     renderPending(); renderSent();
 
     document.getElementById('selAll').addEventListener('change', e=>{ $$('.rowchk').forEach(cb=>cb.checked=e.target.checked); });
@@ -196,17 +203,15 @@
 
     async function postOne(row){
       const params=new URLSearchParams(); for(const [k,v] of Object.entries(row)) params.append(k, v==null?'':String(v));
-      try{
-        await fetch(PUBLIC_EXEC_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:params.toString()});
-        return true;
-      }catch(e){ return false; }
+      try{ await fetch(PUBLIC_EXEC_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:params.toString()}); return true; }
+      catch(e){ return false; }
     }
 
     document.getElementById('btnSendSelected').addEventListener('click', async ()=>{
       const p=readLS(K_PENDING);
       const sel=Array.from(document.querySelectorAll('.rowchk')).filter(cb=>cb.checked).map(cb=>Number(cb.dataset.i));
       if(!sel.length){ $('#sendStatus').innerHTML='<span class="warn">⚠ Selecteer eerst één of meerdere rijen.</span>'; return; }
-      $('#sendStatus').textContent='Bezig met indienen… (er wordt nog geen mail gestuurd)';
+      $('#sendStatus').textContent='Bezig met indienen… (bevestiging volgt per e-mail)';
       const keep=[]; const sent=readLS(K_SENT);
       for(let i=0;i<p.length;i++){
         if(!sel.includes(i)){ keep.push(p[i]); continue; }
@@ -214,7 +219,7 @@
         if(ok) sent.unshift({...p[i], sentAt:Date.now()}); else keep.push(p[i]);
       }
       writeLS(K_PENDING,keep); writeLS(K_SENT,sent.slice(0,500)); renderPending(); renderSent();
-      $('#sendStatus').innerHTML='<span class="ok">✅ Ingediend. De valideerder ontvangt de bundel nadat STAFF die verstuurt.</span>';
+      $('#sendStatus').innerHTML='<span class="ok">✅ Ingediend. Je ontvangt zo meteen een ontvangstbevestiging.</span>';
     });
   </script>
 </body>
