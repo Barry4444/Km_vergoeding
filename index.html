@@ -48,7 +48,7 @@
 
       <div class="info" style="margin:8px 0 14px">
         📦 <b>Bundelmodus:</b> je formulier wordt <u>ingediend</u> in de centrale lijst. De valideerder krijgt nog <b>geen</b> mail<br>
-        tot iemand op STAFF <a href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=senddigest" target="_blank">de bundel verstuurt</a>.<br>
+        tot iemand op STAFF <a href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=senddigest&key=0000-0000" target="_blank">de bundel verstuurt</a>.<br>
         ✉️ De aanvrager krijgt <b>onmiddellijk een ontvangstbevestiging</b> (e-mailadres is verplicht).
       </div>
 
@@ -109,7 +109,7 @@
           <button class="btn" type="button" id="btnSave">Opslaan (niet versturen)</button>
           <button class="btn" type="button" id="btnSendSelected">Verstuur geselecteerde (naar bundel)</button>
           <button class="btn secondary" type="button" id="btnClearForm">Formulier leegmaken</button>
-          <a class="btn" href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=diag" id="staffLink">Staff (beveiligd)</a>
+          <a class="btn" href="https://script.google.com/macros/s/AKfycbxU_Dj3zRsZyqnvbbWl8zVH6GAzvuxiiExcqjJOqzlIv5mWxBk34vAXvWXBg-1LslpT/exec?action=diag&key=0000-0000" id="staffLink" target="_blank" rel="noopener">Staff (beveiligd)</a>
         </div>
         <div class="status" id="formStatus" aria-live="polite"></div>
       </form>
@@ -146,7 +146,7 @@
   </div>
 
   <script>
-    const PUBLIC_EXEC_URL = "https://script.google.com/macros/s/AKfycbxah60lvasFXONql81_fpJD2cP-Wowu5DL2h5lozIGbnBso_kB6OTE0vcVFnFZp0zK-/exec";
+    const PUBLIC_EXEC_URL = "https://script.google.com/macros/s/AKfycbxz60BnlSKDLhuBDr4pPCQZxMN89mamd8Z0ust8WEYboKTTnLkKZKervVd93f1ZQKXm/exec";
     (function(){
       const d=new Date(); const yyyy=d.getFullYear(), mm=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
       document.getElementById('datum').value = `${yyyy}-${mm}-${dd}`;
@@ -207,10 +207,12 @@
       catch(e){ return false; }
     }
 
-    document.getElementById('btnSendSelected').addEventListener('click', async ()=>{
+    document.getElementById('btnSendSelected').addEventListener('click', async (ev)=>{
+      const btn = ev.currentTarget;
       const p=readLS(K_PENDING);
       const sel=Array.from(document.querySelectorAll('.rowchk')).filter(cb=>cb.checked).map(cb=>Number(cb.dataset.i));
       if(!sel.length){ $('#sendStatus').innerHTML='<span class="warn">⚠ Selecteer eerst één of meerdere rijen.</span>'; return; }
+      btn.disabled = true; btn.textContent = 'Indienen…';
       $('#sendStatus').textContent='Bezig met indienen… (bevestiging volgt per e-mail)';
       const keep=[]; const sent=readLS(K_SENT);
       for(let i=0;i<p.length;i++){
@@ -220,6 +222,7 @@
       }
       writeLS(K_PENDING,keep); writeLS(K_SENT,sent.slice(0,500)); renderPending(); renderSent();
       $('#sendStatus').innerHTML='<span class="ok">✅ Ingediend. Je ontvangt zo meteen een ontvangstbevestiging.</span>';
+      btn.disabled = false; btn.textContent = 'Verstuur geselecteerde (naar bundel)';
     });
   </script>
 </body>
