@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Filou – Staff launcher</title>
+  <style>
+    :root { --pad:16px; --line:#e6e6e6; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial,sans-serif; background:#fff; }
+    .wrap { max-width:640px; margin:0 auto; padding:24px var(--pad) calc(120px + env(safe-area-inset-bottom)) var(--pad); }
+    h1 { margin:0 0 12px 0; font-size:20px; }
+    .card { border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff; box-shadow:0 6px 16px rgba(0,0,0,.05); }
+    label { display:block; font-weight:600; margin:10px 0 6px; }
+    input { width:100%; padding:14px; border:1px solid var(--line); border-radius:12px; font-size:16px; }
+    .row { display:grid; grid-template-columns:1fr; gap:10px; }
+    .muted { color:#666; font-size:13px; }
+    .stickybar {
+      position:fixed; left:0; right:0; bottom:0; padding:12px var(--pad) calc(12px + env(safe-area-inset-bottom));
+      border-top:1px solid var(--line); background:#fff; display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    }
+    .btn { display:block; text-align:center; text-decoration:none; background:#111; color:#fff; padding:14px; border-radius:12px; font-weight:700; }
+    .btn.secondary { background:#fff; color:#111; border:1px solid #111; }
+    .grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:12px; }
+    @media (min-width:560px) { .grid { grid-template-columns:1fr 1fr; }}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Staff launcher</h1>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="staff">"https://script.google.com/macros/s/AKfycbxz60BnlSKDLhuBDr4pPCQZxMN89mamd8Z0ust8WEYboKTTnLkKZKervVd93f1ZQKXm/exec"</label>
+        <input id="staff" placeholder="https://script.google.com/macros/s/.../exec" />
+      </div>
+      <div>
+        <label for="key">"0000-0000"</label>
+        <input id="key" placeholder="bv. 0000-0000" />
+      </div>
+    </div>
+    <div class="muted" style="margin-top:8px">Tip: voeg deze pagina toe aan je beginscherm. De gegevens worden lokaal bewaard.</div>
+    <div class="grid">
+      <a class="btn" id="btnSave" href="#">Opslaan</a>
+      <a class="btn secondary" id="btnClear" href="#">Wissen</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <a class="btn" id="goDash"   target="_blank" rel="noopener">Dashboard</a>
+    <a class="btn" id="goDigest" target="_blank" rel="noopener">Bundelmail</a>
+    <a class="btn" id="goLog"    target="_blank" rel="noopener">MailLog</a>
+    <a class="btn" id="goExport" target="_blank" rel="noopener">Export CSV</a>
+    <a class="btn secondary" id="goDiag" target="_blank" rel="noopener">Diagnose</a>
+  </div>
+</div>
+
+<div class="stickybar">
+  <a class="btn" id="openDash" target="_blank" rel="noopener">Open Dashboard</a>
+  <a class="btn secondary" id="openLog"  target="_blank" rel="noopener">MailLog</a>
+</div>
+
+<script>
+const K_STAFF = "filou_staff_exec";
+const K_KEY   = "filou_staff_key";
+
+function get(k){ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } }
+function set(k,v){ try{ localStorage.setItem(k, v||""); }catch(e){} }
+function url(base, action, key){ return base + "?action=" + action + "&key=" + encodeURIComponent(key); }
+
+function refresh(){
+  const base = get(K_STAFF), key = get(K_KEY);
+  document.getElementById('staff').value = base;
+  document.getElementById('key').value   = key;
+  const has = !!(base && key);
+  const link = (id, action) => {
+    const a = document.getElementById(id);
+    a.href = has ? url(base, action, key) : "#";
+    a.style.opacity = has ? 1 : .5;
+    a.style.pointerEvents = has ? "auto" : "none";
+  };
+  link("goDash",   "dashboard");
+  link("goDigest", "senddigest");
+  link("goLog",    "maillog");
+  link("goExport", "export");
+  link("goDiag",   "diag");
+  link("openDash", "dashboard");
+  link("openLog",  "maillog");
+}
+
+document.getElementById('btnSave').addEventListener('click', (e)=>{
+  e.preventDefault();
+  set(K_STAFF, document.getElementById('staff').value.trim());
+  set(K_KEY,   document.getElementById('key').value.trim());
+  refresh(); alert("Opgeslagen.");
+});
+document.getElementById('btnClear').addEventListener('click', (e)=>{
+  e.preventDefault();
+  set(K_STAFF, ""); set(K_KEY, ""); refresh();
+});
+
+// Prefill from querystring if present
+const qs = new URLSearchParams(location.search);
+if (qs.get("staff")) set(K_STAFF, qs.get("staff"));
+if (qs.get("key"))   set(K_KEY,   qs.get("key"));
+
+refresh();
+</script>
+</body>
+</html>
