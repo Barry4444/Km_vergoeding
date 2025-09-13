@@ -11,8 +11,6 @@
     .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; box-shadow: 0 8px 24px rgba(0,0,0,.06); }
     header.card-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom: 8px; }
     .brand-block { display:flex; flex-direction:column; gap:6px; }
-    .road { position: relative; height: 24px; margin: 12px 0 18px; overflow: hidden; }
-    .road:before { content:""; position:absolute; left:0; right:0; top:12px; height:2px; border-top:2px dashed #c7ccd6; }
     .car { position: absolute; top:-6px; right:-32px; left:auto; font-size:22px; animation: driveRTL 6s linear infinite; }
     @keyframes driveRTL { from { right:-32px; } to { right: calc(100% + 32px); } }
     label { display:block; margin:12px 0 6px; font-weight:600; }
@@ -148,7 +146,7 @@
 
 <script>
 // *** VASTE ENDPOINT (niet zichtbaar voor gebruiker) ***
-const PUBLIC_EXEC = "https://script.google.com/macros/s/AKfycbzeJgFMsy4wuRLJOmIQbPxncvelfjOf52v9tn0Eo7wimxNTJvjyUvh2xYN9E8y-ca9E/exec";
+const PUBLIC_EXEC = "https://script.google.com/macros/s/AKfycbxN_GAp1wgzfndZtxRmIc9cvJZzya7_ZaDkGpMncLrZT--MFxTy1jR8Sj5OqWdBdh5ELQ/exec";
 
 function setStatus(html, cls=""){ const el = document.getElementById('status'); el.innerHTML = html; el.className = cls; }
 
@@ -179,7 +177,6 @@ function kvRow(label, val){
 }
 
 function showReceipt(o, p){
-  // o = server response ({id}) ; p = payload
   const kv = [
     kvRow("ID", o.id||"(onbekend)"),
     kvRow("Coach", p.coach_naam),
@@ -264,7 +261,6 @@ document.getElementById('btnSend').addEventListener('click', async (e)=>{
   }
 });
 
-// Autoload history in case user opens the page after a previous send
 populateHistory();
 </script>
 </body>
