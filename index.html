@@ -11,7 +11,6 @@
     .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; box-shadow: 0 8px 24px rgba(0,0,0,.06); }
     header.card-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom: 8px; }
     .brand-block { display:flex; flex-direction:column; gap:6px; }
-    .logo-right img { height:120px; width:auto; display:block; filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); }
     .road { position: relative; height: 24px; margin: 12px 0 18px; overflow: hidden; }
     .road:before { content:""; position:absolute; left:0; right:0; top:12px; height:2px; border-top:2px dashed #c7ccd6; }
     .car { position: absolute; top:-6px; right:-32px; left:auto; font-size:22px; animation: driveRTL 6s linear infinite; }
@@ -22,12 +21,27 @@
     .actions { display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
     .btn { background:#111; color:#fff; border:none; padding:12px 14px; border-radius:12px; font-weight:700; cursor:pointer; }
     .btn.secondary { background:#fff; color:#111; border:1px solid #111; }
-    .btn.danger { background:#b00020; }
-    table { width:100%; border-collapse:collapse; }
-    th,td { padding:10px; border-top:1px solid var(--line); text-align:left; }
     .muted { color:#777; font-size:14px; }
     .badge { display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:#fff; font-weight:600; font-size:13px; }
     .ok { color:#0a7a0a; } .warn { color:#b00020; }
+    /* Receipt */
+    .receipt { margin-top:18px; }
+    .receipt h2 { margin:0 0 8px 0; font-size:20px; }
+    .kv { display:grid; grid-template-columns:220px 1fr; gap:8px 12px; }
+    .kv div { padding:6px 0; border-top:1px dashed var(--line); }
+    .kv div b { color:#333; }
+    .receipt-actions { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    /* History */
+    details.history { margin-top:18px; }
+    .hist-list { border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    .hist-row { display:grid; grid-template-columns:160px 1fr 120px; gap:8px; padding:10px 12px; border-top:1px solid var(--line); }
+    .hist-row:first-child { border-top:none; }
+    .hist-row code { font-size:12px; }
+    @media print {
+      body { background:#fff; }
+      .actions, .receipt-actions, details.history, .car { display:none !important; }
+      .card { box-shadow:none; border:0; }
+    }
   </style>
 </head>
 <body>
@@ -36,123 +50,110 @@
       <header class="card-head">
         <div class="brand-block">
           <h1 style="margin:0">Kilometervergoeding</h1>
-          <span class="badge">Formulier • Velden compatibel met Code.gs</span>
-          <span class="muted">Na <b>Versturen</b> krijg je een bevestiging. De validator ontvangt (optioneel) een mail. Het tarief wordt ingesteld in <i>Config</i>.</span>
+          <span class="badge">Formulier • Verzendbon na verzenden</span>
+          <span class="muted">Na <b>Versturen</b> zie je hieronder een verzendbon en krijg je eventueel een e-mailbevestiging.</span>
         </div>
         <div class="logo-right"><div class="car">🚗</div></div>
       </header>
 
-      <div class="row" style="margin-bottom:8px">
-        <div>
-          <label for="publicUrl">PUBLIC /exec URL</label>
-          <input id="publicUrl" value="https://script.google.com/macros/s/AKfycbzo_uDBC_ytbmxdFOnS0iWP8LFIgyDMKSz84HMD8KSgs8NcsKxeDTWFUzCHD5loTTlXUQ/exec" />
+      <!-- FORM -->
+      <div id="form">
+        <div class="row">
+          <div>
+            <label for="coach_naam">Coach (naam)</label>
+            <input id="coach_naam" placeholder="Voornaam Naam" />
+          </div>
+          <div>
+            <label for="gebruiker_email">E-mail aanvrager</label>
+            <input id="gebruiker_email" type="email" placeholder="naam@club.be" />
+          </div>
         </div>
-        <div>
-          <label for="coach_naam">Coach (naam)</label>
-          <input id="coach_naam" placeholder="Voornaam Naam" />
+
+        <div class="row">
+          <div>
+            <label for="rit_datum">Datum rit</label>
+            <input id="rit_datum" type="date" />
+          </div>
+          <div>
+            <label for="bestemming">Bestemming</label>
+            <input id="bestemming" placeholder="bv. Leuven (Sportoase)" />
+          </div>
         </div>
+
+        <div class="row">
+          <div>
+            <label for="afstand_km">Afstand (heen & terug, km)</label>
+            <input id="afstand_km" type="number" step="0.01" inputmode="decimal" placeholder="0" />
+          </div>
+          <div>
+            <label for="ploeg">Ploeg</label>
+            <select id="ploeg">
+              <option>U21</option>
+              <option>U18</option>
+              <option>U16</option>
+              <option>U14</option>
+              <option>Dames</option>
+              <option>N/A</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="reden">Reden</label>
+            <select id="reden">
+              <option>Wedstrijd</option>
+              <option>Tornooi</option>
+            </select>
+          </div>
+          <div>
+            <label for="diverse_omschrijving">Diverse kosten (omschrijving)</label>
+            <input id="diverse_omschrijving" placeholder="Parking, tol, ..." />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="diverse_bedrag">Diverse kosten (€)</label>
+            <input id="diverse_bedrag" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />
+          </div>
+          <div></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btnSend">Versturen</button>
+          <button class="btn secondary" id="btnReset" type="button">Leegmaken</button>
+        </div>
+
+        <p class="muted" id="status"></p>
       </div>
 
-      <div class="row">
-        <div>
-          <label for="gebruiker_email">E-mail aanvrager</label>
-          <input id="gebruiker_email" type="email" placeholder="naam@club.be" />
+      <!-- RECEIPT -->
+      <div id="receipt" class="receipt" style="display:none">
+        <h2>Verzendbon</h2>
+        <div class="kv" id="receiptKv"></div>
+        <div class="receipt-actions">
+          <button class="btn" onclick="window.print()">Afdrukken / PDF</button>
+          <button class="btn secondary" id="btnNew">Nieuwe aanvraag</button>
         </div>
-        <div>
-          <label for="rit_datum">Datum rit</label>
-          <input id="rit_datum" type="date" />
-        </div>
+
+        <details class="history">
+          <summary>Mijn vorige inzendingen (lokaal)</summary>
+          <div id="hist" class="hist-list"></div>
+        </details>
       </div>
 
-      <div class="row">
-        <div>
-          <label for="bestemming">Bestemming</label>
-          <input id="bestemming" placeholder="bv. Leuven (Sportoase)" />
-        </div>
-        <div>
-          <label for="afstand_km">Afstand (heen & terug, km)</label>
-          <input id="afstand_km" type="number" step="0.01" inputmode="decimal" placeholder="0" />
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="ploeg">Ploeg</label>
-          <select id="ploeg">
-            <option>U21</option>
-            <option>U18</option>
-            <option>U16</option>
-            <option>U14</option>
-            <option>Dames</option>
-            <option>N/A</option>
-          </select>
-        </div>
-        <div>
-          <label for="reden">Reden</label>
-          <select id="reden">
-            <option>Wedstrijd</option>
-            <option>Tornooi</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="diverse_omschrijving">Diverse kosten (omschrijving)</label>
-          <input id="diverse_omschrijving" placeholder="Parking, tol, ..." />
-        </div>
-        <div>
-          <label for="diverse_bedrag">Diverse kosten (€)</label>
-          <input id="diverse_bedrag" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn" id="btnSend">Versturen</button>
-        <button class="btn secondary" id="btnReset" type="button">Leegmaken</button>
-      </div>
-
-      <p class="muted" id="status"></p>
     </div>
   </div>
 
 <script>
-const K_PUBLIC = "filou_public_exec";
-function get(k){ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } }
-function set(k,v){ try{ localStorage.setItem(k, v||""); }catch(e){} }
-function sanitizeUrl(u){ try{ const x = new URL(u); return x.href; }catch(e){ return ""; } }
+// *** VASTE ENDPOINT (niet zichtbaar voor gebruiker) ***
+const PUBLIC_EXEC = "https://script.google.com/macros/s/AKfycbzeJgFMsy4wuRLJOmIQbPxncvelfjOf52v9tn0Eo7wimxNTJvjyUvh2xYN9E8y-ca9E/exec";
 
-function qsPrefill(){
-  const qs = new URLSearchParams(location.search);
-  if (qs.get("public")) set(K_PUBLIC, sanitizeUrl(qs.get("public")));
-  if (qs.get("email")) document.getElementById('gebruiker_email').value = qs.get("email");
-  if (qs.get("coach")) document.getElementById('coach_naam').value = qs.get("coach");
-}
-
-function refresh(){
-  document.getElementById('publicUrl').value = get(K_PUBLIC);
-}
 function setStatus(html, cls=""){ const el = document.getElementById('status'); el.innerHTML = html; el.className = cls; }
 
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  document.querySelectorAll('input,select,textarea').forEach(el=>{
-    if (el.id==="publicUrl") return;
-    if (el.tagName==="SELECT"){ el.selectedIndex = 0; } else { el.value = ""; }
-  });
-  setStatus("");
-});
-
-document.getElementById('publicUrl').addEventListener('change', (e)=>{
-  const u = sanitizeUrl(e.target.value.trim()); set(K_PUBLIC, u); refresh();
-});
-
-document.getElementById('btnSend').addEventListener('click', async (e)=>{
-  e.preventDefault();
-  const base = sanitizeUrl(document.getElementById('publicUrl').value.trim());
-  if (!base){ setStatus("Vul eerst de <b>PUBLIC /exec URL</b> in.", "warn"); return; }
-
-  // Build payload matching Code.gs (appendRit)
-  const payload = {
+function formToPayload(){
+  return {
     reden: document.getElementById('reden').value,
     ploeg: document.getElementById('ploeg').value,
     afstand_km: document.getElementById('afstand_km').value,
@@ -163,24 +164,98 @@ document.getElementById('btnSend').addEventListener('click', async (e)=>{
     diverse_omschrijving: document.getElementById('diverse_omschrijving').value,
     diverse_bedrag: document.getElementById('diverse_bedrag').value
   };
+}
 
-  // Minimal validation
-  if (!payload.rit_datum || !payload.afstand_km || !payload.bestemming){
-    setStatus("Gelieve <b>datum</b>, <b>afstand</b> en <b>bestemming</b> in te vullen.", "warn"); return;
+function validate(p){
+  if (!p.rit_datum || !p.afstand_km || !p.bestemming){
+    setStatus("Gelieve <b>datum</b>, <b>afstand</b> en <b>bestemming</b> in te vullen.", "warn");
+    return false;
   }
+  return true;
+}
 
-  set(K_PUBLIC, base); // persist
+function kvRow(label, val){
+  return `<div><b>${label}</b></div><div>${val?String(val).replace(/</g,'&lt;'):'-'}</div>`;
+}
+
+function showReceipt(o, p){
+  // o = server response ({id}) ; p = payload
+  const kv = [
+    kvRow("ID", o.id||"(onbekend)"),
+    kvRow("Coach", p.coach_naam),
+    kvRow("E-mail", p.gebruiker_email),
+    kvRow("Datum rit", p.rit_datum),
+    kvRow("Bestemming", p.bestemming),
+    kvRow("Afstand (km)", p.afstand_km),
+    kvRow("Ploeg", p.ploeg),
+    kvRow("Reden", p.reden),
+    kvRow("Diverse kosten (€)", p.diverse_bedrag),
+    kvRow("Diverse omschrijving", p.diverse_omschrijving),
+    kvRow("Ingediend op", new Date().toLocaleString())
+  ].join("");
+  document.getElementById('receiptKv').innerHTML = kv;
+
+  document.getElementById('form').style.display = "none";
+  document.getElementById('receipt').style.display = "block";
+  populateHistory();
+}
+
+function saveHistory(o, p){
+  try{
+    const item = { id:o.id, ts:Date.now(), ...p };
+    const arr = JSON.parse(localStorage.getItem("km_submissions")||"[]");
+    arr.unshift(item);
+    localStorage.setItem("km_submissions", JSON.stringify(arr.slice(0,50)));
+  }catch(e){}
+}
+
+function populateHistory(){
+  const host = document.getElementById('hist');
+  host.innerHTML = "";
+  let arr = [];
+  try{ arr = JSON.parse(localStorage.getItem("km_submissions")||"[]"); }catch(e){}
+  if (!arr.length){ host.innerHTML = '<div class="hist-row"><em>Geen eerdere inzendingen gevonden.</em></div>'; return; }
+  arr.forEach(x=>{
+    const d = new Date(x.ts).toLocaleString();
+    const line = document.createElement('div');
+    line.className = "hist-row";
+    line.innerHTML = `<div>${d}</div><div>${x.coach_naam||'-'} → ${x.bestemming||'-'} (${x.afstand_km||'0'} km)</div><div><code>${x.id||''}</code></div>`;
+    host.appendChild(line);
+  });
+}
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    if (el.tagName==="SELECT"){ el.selectedIndex = 0; } else { el.value = ""; }
+  });
+  setStatus("");
+});
+
+document.getElementById('btnNew').addEventListener('click', ()=>{
+  document.getElementById('receipt').style.display = "none";
+  document.getElementById('form').style.display = "block";
+  setStatus("");
+  document.getElementById('coach_naam').focus();
+});
+
+document.getElementById('btnSend').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  const payload = formToPayload();
+  if (!validate(payload)) return;
+
   setStatus("Bezig met verzenden…");
 
   try{
-    const res = await fetch(base, {
+    const res = await fetch(PUBLIC_EXEC, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(payload).toString()
     });
     const json = await res.json().catch(()=>({ok:false,error:"Geen JSON"}));
     if (json.ok){
-      setStatus(`✅ Verstuurd. ID: <code>${json.id}</code>. Je ontvangt een bevestiging per mail (indien geactiveerd).`, "ok");
+      setStatus(`✅ Verstuurd. ID: <code>${json.id}</code>.`, "ok");
+      saveHistory(json, payload);
+      showReceipt(json, payload);
     } else {
       setStatus(`❌ Mislukt: ${json.error||"onbekende fout"}`, "warn");
     }
@@ -189,8 +264,8 @@ document.getElementById('btnSend').addEventListener('click', async (e)=>{
   }
 });
 
-qsPrefill();
-refresh();
+// Autoload history in case user opens the page after a previous send
+populateHistory();
 </script>
 </body>
 </html>
